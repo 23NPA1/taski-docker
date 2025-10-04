@@ -132,43 +132,29 @@ jobs:
       - name: Copy docker-compose.production.yml via ssh
         uses: appleboy/scp-action@master
         with:
-          host: 89.169.169.111
-          username: yc-user
-          password: JlOv3bJ-5z
-          port: 22
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "docker-compose.production.yml"
           target: "taski"
       - name: Executing remote ssh commands to deploy
         uses: appleboy/ssh-action@master
         with:
-          host: 89.169.169.111
-          username: yc-user
-          password: JlOv3bJ-5z
-          port: 22
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             cd taski
-            cat > .env << 'EOF'
-            POSTGRES_USER=django_user
-            POSTGRES_PASSWORD=mysecretpassword
-            POSTGRES_DB=django
-            DB_HOST=db
-            DB_PORT=5432
-            EOF
-            if command -v docker-compose &> /dev/null; then
-              COMPOSE_CMD="docker-compose"
-            elif docker compose version &> /dev/null; then
-              COMPOSE_CMD="docker compose"
-            else
-              echo "Neither docker-compose nor docker compose found"
-              exit 1
-            fi
-            echo "Using: $COMPOSE_CMD"
-            sudo $COMPOSE_CMD -f docker-compose.production.yml pull
-            sudo $COMPOSE_CMD -f docker-compose.production.yml down
-            sudo $COMPOSE_CMD -f docker-compose.production.yml up -d
-            sudo $COMPOSE_CMD -f docker-compose.production.yml exec backend python manage.py migrate
-            sudo $COMPOSE_CMD -f docker-compose.production.yml exec backend python manage.py collectstatic --noinput
-            sudo $COMPOSE_CMD -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /backend_static/static/
+            sudo docker compose -f docker-compose.production.yml pull
+            sudo docker compose -f docker-compose.production.yml down
+            sudo docker compose -f docker-compose.production.yml up -d
+            sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
+            sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --noinput
+            sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /backend_static/static/
 
   send_message:
     runs-on: ubuntu-latest
